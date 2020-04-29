@@ -1,0 +1,59 @@
+version: "3"
+
+services:
+  sonarqube:
+    image: sonarqube:lts
+    container_name: sonarqube
+    hostname: sonarqube
+    stop_grace_period: 1m10s
+    expose:
+      - 9000
+    ports:
+      - "9000:9000"
+    networks:
+      - sonarnet
+    environment:
+      - sonar.jdbc.username=sonar
+      - sonar.jdbc.password=sonar1234
+      - sonar.jdbc.url=jdbc:postgresql://db/sonar
+      - sonar.search.javaAdditionalOpts=-Dbootstrap.system_call_filter=false
+    volumes:
+      - logs:/opt/sonarqube/logs:rw
+      - data:/opt/sonarqube/data:rw
+      - ext:/opt/sonarqube/extensions:rw
+    depends_on: 
+      - db
+
+  db:
+    image: postgres:12.0
+    container_name: sonarqube-pg
+    hostname: sonarqube-pg
+    networks:
+      - sonarnet
+    environment:
+      - POSTGRES_USER=sonar
+      - POSTGRES_PASSWORD=sonar1234
+
+  ci:
+    # Remove the following comment, if you want to build a new image for jenkins
+    #build: ./jenkins/
+    # Comment following line if you build new image using "build" parameter above.
+    image: mahendrshinde/jenkins:sonar
+    container_name: jenkins-ci
+    hostname: jenkins-ci
+    networks: 
+    - sonarnet
+    ports: 
+    - "8080:8080"
+    depends_on: 
+    - db
+    - sonarqube
+
+networks:
+  sonarnet:
+
+volumes:
+  data:
+  logs:
+  ext:  
+  
